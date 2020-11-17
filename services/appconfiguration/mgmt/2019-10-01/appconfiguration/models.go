@@ -20,12 +20,13 @@ package appconfiguration
 import (
 	"context"
 	"encoding/json"
+	"net/http"
+
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/date"
 	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/Azure/go-autorest/tracing"
-	"net/http"
 )
 
 // The package's fully qualified name.
@@ -664,6 +665,31 @@ type ListKeyValueParameters struct {
 	Key *string `json:"key,omitempty"`
 	// Label - The label of the key.
 	Label *string `json:"label,omitempty"`
+}
+
+// GetKeyValueParameters the parameters used to list a configuration store key-value
+type GetKeyValueParameters struct {
+	autorest.Response `json:"-"`
+	// Key - The key to retrieve.
+	Key *string `json:"key,omitempty"`
+	// Value - The key to retrieve.
+	Value *string `json:"value,omitempty"`
+	// Label - The label of the key.
+	Label *string `json:"label,omitempty"`
+}
+
+// SetKeyValueParameters the parameters used to list a configuration store key-value
+type SetKeyValueParameters struct {
+	// Key - The key to create.
+	Key *string `json:"key,omitempty"`
+	// Value - The value of the key.
+	Value *string `json:"value,omitempty"`
+	// Label - The label of the key.
+	Label *string `json:"label,omitempty"`
+	// Secret - The secret of appconfig.
+	Secret *string `json:"secret,omitempty"`
+	// Credential - The credential of appconfig.
+	Credential *string `json:"credential,omitempty"`
 }
 
 // NameAvailabilityStatus the result of a request to check the availability of a resource name.

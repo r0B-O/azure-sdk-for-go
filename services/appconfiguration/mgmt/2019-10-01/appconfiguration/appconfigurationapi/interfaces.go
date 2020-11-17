@@ -19,7 +19,8 @@ package appconfigurationapi
 
 import (
 	"context"
-	"github.com/Azure/azure-sdk-for-go/services/appconfiguration/mgmt/2019-10-01/appconfiguration"
+
+	"github.com/shintovincent/azure-sdk-for-go/services/appconfiguration/mgmt/2019-10-01/appconfiguration"
 )
 
 // ConfigurationStoresClientAPI contains the set of methods on the ConfigurationStoresClient type.
@@ -36,6 +37,8 @@ type ConfigurationStoresClientAPI interface {
 	ListKeyValue(ctx context.Context, resourceGroupName string, configStoreName string, listKeyValueParameters appconfiguration.ListKeyValueParameters) (result appconfiguration.KeyValue, err error)
 	RegenerateKey(ctx context.Context, resourceGroupName string, configStoreName string, regenerateKeyParameters appconfiguration.RegenerateKeyParameters) (result appconfiguration.APIKey, err error)
 	Update(ctx context.Context, resourceGroupName string, configStoreName string, configStoreUpdateParameters appconfiguration.ConfigurationStoreUpdateParameters) (result appconfiguration.ConfigurationStoresUpdateFuture, err error)
+	GetKeyValue(ctx context.Context, resourceGroupName string, configStoreName string, setKeyValueParameters appconfiguration.SetKeyValueParameters) (result appconfiguration.GetKeyValueParameters, err error)
+	SetKeyValue(ctx context.Context, resourceGroupName string, configStoreName string, setKeyValueParameters appconfiguration.SetKeyValueParameters) (result appconfiguration.GetKeyValueParameters, err error)
 }
 
 var _ ConfigurationStoresClientAPI = (*appconfiguration.ConfigurationStoresClient)(nil)

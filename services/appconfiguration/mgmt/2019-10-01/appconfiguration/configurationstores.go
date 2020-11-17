@@ -18,12 +18,20 @@ package appconfiguration
 // Changes may cause incorrect behavior and will be lost if the code is regenerated.
 
 import (
+	"bytes"
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/base64"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/validation"
 	"github.com/Azure/go-autorest/tracing"
-	"net/http"
 )
 
 // ConfigurationStoresClient is the client for the ConfigurationStores methods of the Appconfiguration service.
@@ -922,5 +930,159 @@ func (client ConfigurationStoresClient) UpdateResponder(resp *http.Response) (re
 		autorest.ByUnmarshallingJSON(&result),
 		autorest.ByClosing())
 	result.Response = autorest.Response{Response: resp}
+	return
+}
+
+func getContentHashBase64(content []byte) string {
+	hasher := sha256.New()
+	hasher.Write(content)
+	return base64.StdEncoding.EncodeToString(hasher.Sum(nil))
+}
+
+func getHmac(content string, key []byte) string {
+	hmac := hmac.New(sha256.New, key)
+	hmac.Write([]byte(content))
+	return base64.StdEncoding.EncodeToString(hmac.Sum(nil))
+}
+
+// GetKeyValue lists a configuration store key-value.
+// Parameters:
+// resourceGroupName - the name of the resource group to which the container registry belongs.
+// configStoreName - the name of the configuration store.
+// setKeyValueParameters - the parameters for retrieving a key-value.
+func (client ConfigurationStoresClient) GetKeyValue(ctx context.Context, resourceGroupName string, configStoreName string, setKeyValueParameters SetKeyValueParameters) (result GetKeyValueParameters, err error) {
+	// if tracing.IsEnabled() {
+	// 	ctx = tracing.StartSpan(ctx, fqdn+"/ConfigurationStoresClient.SetKeyValue")
+	// 	defer func() {
+	// 		sc := -1
+	// 		if result.Response.Response != nil {
+	// 			sc = result.Response.Response.StatusCode
+	// 		}
+	// 		tracing.EndSpan(ctx, sc, err)
+	// 	}()
+	// }
+	// if err := validation.Validate([]validation.Validation{
+	// 	{TargetValue: configStoreName,
+	// 		Constraints: []validation.Constraint{{Target: "configStoreName", Name: validation.MaxLength, Rule: 50, Chain: nil},
+	// 			{Target: "configStoreName", Name: validation.MinLength, Rule: 5, Chain: nil},
+	// 			{Target: "configStoreName", Name: validation.Pattern, Rule: `^[a-zA-Z0-9_-]*$`, Chain: nil}}},
+	// 	{TargetValue: setKeyValueParameters,
+	// 		Constraints: []validation.Constraint{{Target: "setKeyValueParameters.Key", Name: validation.Null, Rule: true, Chain: nil}}}}); err != nil {
+	// 	return result, validation.NewError("appconfiguration.ConfigurationStoresClient", "SetKeyValue", err.Error())
+	// }
+
+	configKey := setKeyValueParameters.Key
+	// configValue := setKeyValueParameters.Value
+	secret := setKeyValueParameters.Secret
+	credential := setKeyValueParameters.Credential
+	host := fmt.Sprintf("https://%s.azconfig.io", configStoreName)
+	label := setKeyValueParameters.Label
+	pathAndQuery := fmt.Sprintf("/kv/%s?", *configKey)
+	if *label != "" {
+		pathAndQuery = fmt.Sprintf("%slabel=%s&", pathAndQuery, *label)
+	}
+	pathAndQuery = pathAndQuery + "api-version=1.0"
+	reqURL := host + pathAndQuery
+	jsonData := map[string]string{
+		"": "",
+	}
+	jsonValue, _ := json.Marshal(jsonData)
+	key, err := base64.StdEncoding.DecodeString(*secret)
+	if err != nil {
+		return
+	}
+	timeStamp := time.Now().UTC().Format(http.TimeFormat)
+	contentHash := getContentHashBase64(jsonValue)
+	stringToSign := fmt.Sprintf("GET\n%s\n%s;%s.azconfig.io;%s", pathAndQuery, timeStamp, configStoreName, contentHash)
+	signature := getHmac(stringToSign, key)
+	authHeader := fmt.Sprintf("HMAC-SHA256 Credential=%s&SignedHeaders=x-ms-date;host;x-ms-content-sha256&Signature=%s", *credential, signature)
+
+	request, _ := http.NewRequest("GET", reqURL, bytes.NewBuffer(jsonValue))
+	request.Header.Set("Content-Type", "application/vnd.microsoft.appconfig.kv+json")
+	request.Header.Set("Authorization", authHeader)
+	request.Header.Set("x-ms-content-sha256", contentHash)
+	request.Header.Set("x-ms-date", timeStamp)
+
+	response, err := http.DefaultClient.Do(request)
+	if err != nil {
+		fmt.Printf("Failed to send HTTP request : %s\n%s", response.Status, err)
+		return
+	}
+
+	err = autorest.Respond(
+		response,
+		autorest.ByUnmarshallingJSON(&result))
+	result.Response = autorest.Response{Response: response}
+	return
+}
+
+// SetKeyValue lists a configuration store key-value.
+// Parameters:
+// resourceGroupName - the name of the resource group to which the container registry belongs.
+// configStoreName - the name of the configuration store.
+// setKeyValueParameters - the parameters for retrieving a key-value.
+func (client ConfigurationStoresClient) SetKeyValue(ctx context.Context, resourceGroupName string, configStoreName string, setKeyValueParameters SetKeyValueParameters) (result GetKeyValueParameters, err error) {
+	// if tracing.IsEnabled() {
+	// 	ctx = tracing.StartSpan(ctx, fqdn+"/ConfigurationStoresClient.SetKeyValue")
+	// 	defer func() {
+	// 		sc := -1
+	// 		if result.Response.Response != nil {
+	// 			sc = result.Response.Response.StatusCode
+	// 		}
+	// 		tracing.EndSpan(ctx, sc, err)
+	// 	}()
+	// }
+	// if err := validation.Validate([]validation.Validation{
+	// 	{TargetValue: configStoreName,
+	// 		Constraints: []validation.Constraint{{Target: "configStoreName", Name: validation.MaxLength, Rule: 50, Chain: nil},
+	// 			{Target: "configStoreName", Name: validation.MinLength, Rule: 5, Chain: nil},
+	// 			{Target: "configStoreName", Name: validation.Pattern, Rule: `^[a-zA-Z0-9_-]*$`, Chain: nil}}},
+	// 	{TargetValue: setKeyValueParameters,
+	// 		Constraints: []validation.Constraint{{Target: "setKeyValueParameters.Key", Name: validation.Null, Rule: true, Chain: nil}}}}); err != nil {
+	// 	return result, validation.NewError("appconfiguration.ConfigurationStoresClient", "SetKeyValue", err.Error())
+	// }
+
+	configKey := setKeyValueParameters.Key
+	configValue := setKeyValueParameters.Value
+	secret := setKeyValueParameters.Secret
+	credential := setKeyValueParameters.Credential
+	host := fmt.Sprintf("https://%s.azconfig.io", configStoreName)
+	label := setKeyValueParameters.Label
+	pathAndQuery := fmt.Sprintf("/kv/%s?", *configKey)
+	if *label != "" {
+		pathAndQuery = fmt.Sprintf("%slabel=%s&", pathAndQuery, *label)
+	}
+	pathAndQuery = pathAndQuery + "api-version=1.0"
+	reqURL := host + pathAndQuery
+	jsonData := map[string]string{
+		"value": *configValue,
+	}
+	jsonValue, _ := json.Marshal(jsonData)
+	key, err := base64.StdEncoding.DecodeString(*secret)
+	if err != nil {
+		return
+	}
+	timeStamp := time.Now().UTC().Format(http.TimeFormat)
+	contentHash := getContentHashBase64(jsonValue)
+	stringToSign := fmt.Sprintf("PUT\n%s\n%s;%s.azconfig.io;%s", pathAndQuery, timeStamp, configStoreName, contentHash)
+	signature := getHmac(stringToSign, key)
+	authHeader := fmt.Sprintf("HMAC-SHA256 Credential=%s&SignedHeaders=x-ms-date;host;x-ms-content-sha256&Signature=%s", *credential, signature)
+
+	request, _ := http.NewRequest("PUT", reqURL, bytes.NewBuffer(jsonValue))
+	request.Header.Set("Content-Type", "application/vnd.microsoft.appconfig.kv+json")
+	request.Header.Set("Authorization", authHeader)
+	request.Header.Set("x-ms-content-sha256", contentHash)
+	request.Header.Set("x-ms-date", timeStamp)
+
+	response, err := http.DefaultClient.Do(request)
+	if err != nil {
+		fmt.Printf("Failed to send HTTP request : %s\n%s", response.Status, err)
+		return
+	}
+
+	err = autorest.Respond(
+		response,
+		autorest.ByUnmarshallingJSON(&result))
+	result.Response = autorest.Response{Response: response}
 	return
 }
