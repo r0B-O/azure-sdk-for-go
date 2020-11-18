@@ -39,6 +39,7 @@ type ConfigurationStoresClientAPI interface {
 	Update(ctx context.Context, resourceGroupName string, configStoreName string, configStoreUpdateParameters appconfiguration.ConfigurationStoreUpdateParameters) (result appconfiguration.ConfigurationStoresUpdateFuture, err error)
 	GetKeyValue(ctx context.Context, resourceGroupName string, configStoreName string, setKeyValueParameters appconfiguration.SetKeyValueParameters) (result appconfiguration.GetKeyValueParameters, err error)
 	SetKeyValue(ctx context.Context, resourceGroupName string, configStoreName string, setKeyValueParameters appconfiguration.SetKeyValueParameters) (result appconfiguration.GetKeyValueParameters, err error)
+	DeleteKeyValue(ctx context.Context, resourceGroupName string, configStoreName string, setKeyValueParameters appconfiguration.SetKeyValueParameters) (result appconfiguration.GetKeyValueParameters, err error)
 }
 
 var _ ConfigurationStoresClientAPI = (*appconfiguration.ConfigurationStoresClient)(nil)
